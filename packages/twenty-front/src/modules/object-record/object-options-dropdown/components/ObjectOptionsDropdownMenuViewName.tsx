@@ -9,6 +9,7 @@ import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/use
 import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 import { type View } from '@/views/types/View';
 import { useUpdateViewFromCurrentState } from '@/views/view-picker/hooks/useUpdateViewFromCurrentState';
+import { viewPickerInputNameComponentState } from '@/views/view-picker/states/viewPickerInputNameComponentState';
 import { viewPickerIsDirtyComponentState } from '@/views/view-picker/states/viewPickerIsDirtyComponentState';
 import { viewPickerIsPersistingComponentState } from '@/views/view-picker/states/viewPickerIsPersistingComponentState';
 import { viewPickerSelectedIconComponentState } from '@/views/view-picker/states/viewPickerSelectedIconComponentState';
@@ -75,10 +76,17 @@ export const ObjectOptionsDropdownMenuViewName = ({
     useUpdateObjectViewOptions();
 
   const { updateViewFromCurrentState } = useUpdateViewFromCurrentState();
+  const setViewPickerInputName = useSetAtomComponentState(
+    viewPickerInputNameComponentState,
+  );
   const [viewName, setViewName] = useState(currentView?.name);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const { dropdownId } = useObjectOptionsDropdown();
+
+  const handleViewNameChange = useDebouncedCallback((value: string) => {
+    setAndPersistViewName(value, currentView);
+  }, 500);
 
   useHotkeysOnFocusedElement({
     keys: [Key.Enter],
@@ -87,6 +95,7 @@ export const ObjectOptionsDropdownMenuViewName = ({
         return;
       }
 
+      handleViewNameChange.cancel();
       await updateViewFromCurrentState();
     },
     focusId: dropdownId,
@@ -98,10 +107,6 @@ export const ObjectOptionsDropdownMenuViewName = ({
     setViewPickerSelectedIcon(iconKey);
     setAndPersistViewIcon(iconKey, currentView);
   };
-
-  const handleViewNameChange = useDebouncedCallback((value: string) => {
-    setAndPersistViewName(value, currentView);
-  }, 500);
 
   useEffect(() => {
     setViewPickerSelectedIcon(currentView.icon);
@@ -139,6 +144,7 @@ export const ObjectOptionsDropdownMenuViewName = ({
               value={viewName}
               onChange={(value) => {
                 setViewName(value);
+                setViewPickerInputName(value);
                 handleViewNameChange(value);
               }}
               autoGrow={false}
